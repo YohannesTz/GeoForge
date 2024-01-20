@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginVertical="4dp"
+        android:src="@mipmap/ic_launcher" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginVertical="8dp"
+        android:orientation="vertical">
+
+        <io.supercharge.shimmerlayout.ShimmerLayout
+            android:id="@+id/shimmerLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <View
+                android:id="@+id/placesShimmerView"
+                android:layout_width="match_parent"
+                android:layout_height="16dp"
+                android:background="@drawable/shimmer_rounded_rectangle" />
+        </io.supercharge.shimmerlayout.ShimmerLayout>
+
+        <TextView
+            android:id="@+id/placeNameTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="dafkasd fjkhsdfkljasdhfkljadshflksdajfhasdkljhfasdkljfhsdklj haklsdjh afkljhasdklfj hasdkljfhasdkl fhasdklfjhasdkljfha"
+            android:maxLines="2"
+            android:visibility="gone"
+            android:textStyle="bold"
+            android:layout_marginVertical="2dp"/>
+
+        <TextView
+            android:id="@+id/latLangTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="9.0192° N, 38.7525° E" />
+    </LinearLayout>
+</LinearLayout>

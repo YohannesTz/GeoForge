@@ -1,0 +1,32 @@
+<resources>
+    <!-- Reply Preference -->
+    <string-array name="map_entries">
+        <item>Basic V2</item>
+        <item>DataVis</item>
+        <item>OSM</item>
+        <item>DataVis Light</item>
+        <item>OutDoor V2</item>
+    </string-array>
+
+    <string-array name="map_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
+    <string-array name="cache_size">
+        <item>5mb</item>
+        <item>10mb</item>
+        <item>50mb</item>
+        <item>100mb</item>
+    </string-array>
+
+    <string-array name="cache_size_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
+</resources>

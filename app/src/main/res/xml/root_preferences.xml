@@ -1,0 +1,64 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/location_and_map">
+
+        <ListPreference
+            app:defaultValue="0"
+            app:entries="@array/map_entries"
+            app:entryValues="@array/map_values"
+            app:iconSpaceReserved="false"
+            app:key="mapType"
+            app:title="@string/map_type"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            app:defaultValue="0"
+            app:entries="@array/cache_size"
+            app:entryValues="@array/cache_size_values"
+            app:iconSpaceReserved="false"
+            app:key="cacheSize"
+            app:title="@string/cache_size"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/about">
+
+        <Preference
+            app:key="me"
+            app:persistent="false"
+            app:iconSpaceReserved="false"
+            app:summary="@string/about_me"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="Contact Info">
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="telegram"
+            app:summary="\@yohan_nes"
+            app:title="Telegram" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="email"
+            app:summary="yohannes222ethiopia@gmail.com"
+            app:title="Email" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="github"
+            app:summary="https://github.com/yohannesTz"
+            app:title="Github" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="personal-page"
+            app:summary="https://yohannestz.com"
+            app:title="Personal page" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

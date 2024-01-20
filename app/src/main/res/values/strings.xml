@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">GeoForge</string>
+    <string name="settings_icon">Settings Icon</string>
+    <string name="my_location_icon">My Location icon</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="about">About</string>
+    <string name="settings_title">Settings</string>
+    <string name="map_type">Map Type</string>
+    <string name="about_me">
+        My name is Yohannes, an enthusiastic software developer who is passionate about mobile and web development. I have a strong drive to explore the latest technologies and keep up with current industry trends.
+    </string>
+    <string name="help_icon">Help Icon</string>
+    <string name="location_and_map">Location and Map</string>
+    <string name="cache_size">Cache size</string>
+    <string name="help_text">Please Long press on the map twice to set starting and ending point!</string>
+    <string name="start">Start</string>
+</resources>
