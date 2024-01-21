@@ -1,6 +1,9 @@
 package com.github.yohannestz.geoforge.activity
 
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.DashPathEffect
+import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -22,7 +25,10 @@ import com.github.yohannestz.geoforge.R
 import com.github.yohannestz.geoforge.adapters.GeoPointsAdapter
 import com.github.yohannestz.geoforge.map.CacheTypeSize
 import com.github.yohannestz.geoforge.map.GeoForgeMapFactory
+import com.github.yohannestz.geoforge.map.GeoForgeMoveSimulator
+import com.github.yohannestz.geoforge.map.GeoForgeRoutePartitioner
 import com.github.yohannestz.geoforge.map.MapType
+import com.github.yohannestz.geoforge.map.TravelMode
 import com.github.yohannestz.geoforge.viewmodels.MainViewModel
 import com.github.yohannestz.geoforge.viewmodels.TaskStatus
 import org.osmdroid.api.IMapController
@@ -35,8 +41,11 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+import kotlin.math.*
+
 
 class MainActivity : AppCompatActivity(), MapListener {
 
@@ -47,9 +56,12 @@ class MainActivity : AppCompatActivity(), MapListener {
     private lateinit var geoPointsRv: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var startButton: Button
+    private lateinit var stopButton: Button
     private lateinit var geoPointsLinearLayout: ConstraintLayout
+    private lateinit var geoForgeLayout: ConstraintLayout
 
     private lateinit var geoPointsAdapter: GeoPointsAdapter
+    private lateinit var simulator: GeoForgeMoveSimulator
     private lateinit var viewModel: MainViewModel
     private val startPoint = GeoPoint(9.0192, 38.7525)
 
@@ -71,7 +83,9 @@ class MainActivity : AppCompatActivity(), MapListener {
         geoPointsRv = findViewById(R.id.geoPointsRv)
         startButton = findViewById(R.id.startButton)
         progressBar = findViewById(R.id.progressBar)
+        stopButton = findViewById(R.id.stopButton)
         geoPointsLinearLayout = findViewById(R.id.geoPointsLinearLayout)
+        geoForgeLayout = findViewById(R.id.geoForgeLinearLayout)
 
         mapView.setMultiTouchControls(true)
         setCacheTypeSize(CacheTypeSize.FIFTY_MB)
@@ -135,6 +149,8 @@ class MainActivity : AppCompatActivity(), MapListener {
 
                 is TaskStatus.Success -> {
                     geoPointsLinearLayout.visibility = View.GONE
+                    geoForgeLayout.visibility = View.VISIBLE
+
                     val startPoint = viewModel.geoPoints[0]
                     val endPoint = viewModel.geoPoints[viewModel.geoPoints.size - 1]
 
@@ -158,12 +174,54 @@ class MainActivity : AppCompatActivity(), MapListener {
                     endMarker.title = "End point"
                     mapView.overlays.add(endMarker)
 
-                    mapView.overlays.add(status.roadOverlay)
+                    val moving = ContextCompat.getDrawable(
+                        applicationContext,
+                        R.drawable.ic_car
+                    )
+
+                    val customDistanceMetric: (GeoPoint, GeoPoint) -> Double = { p1, p2 ->
+                        sqrt(
+                            (p1.latitude - p2.latitude).pow(2) + (p1.longitude - p2.longitude).pow(
+                                2
+                            )
+                        )
+                    }
+
+                    val partitioner = GeoForgeRoutePartitioner(TravelMode.CAR, customDistanceMetric)
+                    val result = partitioner.partitionRouteIntoEqualSegments(
+                        status.roadOverlay.actualPoints as ArrayList,
+                        25
+                    )
+                    simulator = GeoForgeMoveSimulator(mapView, result, moving!!, 1025.0)
+                    simulator.startSimulation(
+                        onSimulationFinish = {
+                            showFinishedDialog()
+                        }
+                    )
+
+                    val line = Polyline(mapView, true, false)
+                    line.setPoints(result)
+                    line.infoWindow = null
+                    line.paint.style = Paint.Style.STROKE
+                    line.paint.pathEffect = DashPathEffect(floatArrayOf(10f, 20f), 0f)
+                    line.color = Color.rgb(0, 191, 255)
+                    line.paint.pathEffect = DashPathEffect(floatArrayOf(10f, 20f), 0f)
+                    mapView.overlays.add(0, line)
+                    mapView.postInvalidate()
                 }
 
                 is TaskStatus.Error -> {
                     Toast.makeText(applicationContext, status.message, Toast.LENGTH_LONG).show()
                 }
+            }
+        }
+
+        stopButton.setOnClickListener {
+            if (simulator.isRunning) {
+                simulator.stopSimulation()
+                geoForgeLayout.visibility = View.GONE
+                mapView.overlays.removeAt(mapView.overlays.size - 2)
+                mapView.postInvalidate()
             }
         }
 
@@ -197,6 +255,19 @@ class MainActivity : AppCompatActivity(), MapListener {
             .setMessage(helpMessage)
             .setPositiveButton("OK") { dialog, _ ->
                 dialog.dismiss() // Dismiss the dialog when "OK" is clicked
+            }
+            .create()
+
+        alertDialog.show()
+    }
+
+    private fun showFinishedDialog() {
+        val helpMessage = resources.getString(R.string.finished)
+        val alertDialog = AlertDialog.Builder(this)
+            .setTitle("Help")
+            .setMessage(helpMessage)
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
             }
             .create()
 

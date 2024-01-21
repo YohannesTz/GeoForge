@@ -17,6 +17,8 @@ import org.osmdroid.bonuspack.routing.Road
 import org.osmdroid.bonuspack.routing.RoadManager
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.overlay.Polyline
+import kotlin.math.*
+import kotlin.math.pow
 
 sealed class TaskStatus {
     data object Loading : TaskStatus()
@@ -26,6 +28,9 @@ sealed class TaskStatus {
 
 class MainViewModel : ViewModel() {
     val geoPoints: ArrayList<GeoPoint> = ArrayList()
+    var isRunning: Boolean = false
+
+    private var stopPoints: ArrayList<GeoPoint> = ArrayList()
     private val taskStatus: MutableLiveData<TaskStatus> = MutableLiveData()
     fun getTaskStatus(): LiveData<TaskStatus> = taskStatus
 
@@ -37,6 +42,9 @@ class MainViewModel : ViewModel() {
                     val roadManager: RoadManager = OSRMRoadManager(context, "OBP_Tuto/1.0")
                     roadManager.getRoad(waypoints)
                 }
+
+                stopPoints = road.mRouteHigh
+
                 if (road.mStatus == Road.STATUS_OK) {
                     val roadOverlay = RoadManager.buildRoadOverlay(
                         road,

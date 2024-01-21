@@ -58,8 +58,7 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'io.supercharge:shimmerlayout:2.1.0'
 
-    //I know I know... but I am too lazy :(
-    implementation 'com.github.razir.progressbutton:progressbutton:2.1.0'
+    implementation 'com.airbnb.android:lottie:6.3.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

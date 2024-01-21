@@ -29,4 +29,6 @@
     <string name="cache_size">Cache size</string>
     <string name="help_text">Please Long press on the map twice to set starting and ending point!</string>
     <string name="start">Start</string>
+    <string name="finished">We have finished simulating your route.</string>
+    <string name="stop">Stop</string>
 </resources>

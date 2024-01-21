@@ -75,7 +75,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:background="@android:color/darker_gray" />
+        tools:background="@android:color/darker_gray" >
+
+    </org.osmdroid.views.MapView>
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
@@ -150,14 +152,27 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/geoForgeLinearLayout"
         android:layout_width="0dp"
-        tools:layout_height="300dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="48dp"
-        android:visibility="gone"
         android:background="@drawable/top_rounded_white_bg"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_height="300dp"
+        tools:visibility="visible">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:layout_width="0dp"
+            android:layout_height="140dp"
+            android:id="@+id/animation_view"
+            app:lottie_rawRes="@raw/location_animation_2"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/stopButton"/>
 
         <Button
             android:id="@+id/stopButton"
@@ -165,22 +180,11 @@
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
             android:paddingVertical="12dp"
-            android:text="@string/start"
+            android:text="@string/stop"
             android:textSize="16sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
-
-        <ProgressBar
-            android:id="@+id/forgeProgressbar"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/stopButton"
-            app:layout_constraintEnd_toEndOf="@+id/stopButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/stopButton" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

@@ -29,6 +29,7 @@
                 android:id="@+id/placesShimmerView"
                 android:layout_width="match_parent"
                 android:layout_height="16dp"
+                android:layout_marginEnd="16dp"
                 android:background="@drawable/shimmer_rounded_rectangle" />
         </io.supercharge.shimmerlayout.ShimmerLayout>
 

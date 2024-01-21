@@ -68,7 +68,7 @@ class GeoPointsAdapter(private val geoPoints: List<GeoPoint>, private val contex
             shimmerLayout.startShimmerAnimation()
             client.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                    //Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
                 }
 
                 @SuppressLint("SetTextI18n")
@@ -93,7 +93,6 @@ class GeoPointsAdapter(private val geoPoints: List<GeoPoint>, private val contex
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
             }
 
             return "Unknown"
