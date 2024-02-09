@@ -1,36 +1,51 @@
 package com.github.yohannestz.geoforge.activity
 
+import android.Manifest
+import android.app.AppOpsManager
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.DashPathEffect
 import android.graphics.Paint
+import android.location.Location
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.airbnb.lottie.utils.Utils
 import com.github.yohannestz.geoforge.BuildConfig
 import com.github.yohannestz.geoforge.R
 import com.github.yohannestz.geoforge.adapters.GeoPointsAdapter
-import com.github.yohannestz.geoforge.map.CacheTypeSize
+import com.github.yohannestz.geoforge.map.CacheSizeType
 import com.github.yohannestz.geoforge.map.GeoForgeMapFactory
 import com.github.yohannestz.geoforge.map.GeoForgeMoveSimulator
 import com.github.yohannestz.geoforge.map.GeoForgeRoutePartitioner
 import com.github.yohannestz.geoforge.map.MapType
 import com.github.yohannestz.geoforge.map.TravelMode
+import com.github.yohannestz.geoforge.utils.Constants
 import com.github.yohannestz.geoforge.viewmodels.MainViewModel
 import com.github.yohannestz.geoforge.viewmodels.TaskStatus
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import org.osmdroid.api.IMapController
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
@@ -59,11 +74,25 @@ class MainActivity : AppCompatActivity(), MapListener {
     private lateinit var stopButton: Button
     private lateinit var geoPointsLinearLayout: ConstraintLayout
     private lateinit var geoForgeLayout: ConstraintLayout
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private lateinit var geoPointsAdapter: GeoPointsAdapter
     private lateinit var simulator: GeoForgeMoveSimulator
     private lateinit var viewModel: MainViewModel
-    private val startPoint = GeoPoint(9.0192, 38.7525)
+    private var startPoint = GeoPoint(9.0192, 38.7525)
+
+    private val requestLocationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            ) {
+                // Both fine and coarse location permissions granted
+                checkMockLocationPermission()
+            } else {
+                // Permission denied
+                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,9 +116,36 @@ class MainActivity : AppCompatActivity(), MapListener {
         geoPointsLinearLayout = findViewById(R.id.geoPointsLinearLayout)
         geoForgeLayout = findViewById(R.id.geoForgeLinearLayout)
 
-        mapView.setMultiTouchControls(true)
-        setCacheTypeSize(CacheTypeSize.FIFTY_MB)
-        mapView.setTileSource(GeoForgeMapFactory.createMap(MapType.MAPTILER_OSM_URL))
+        val prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        checkLocationPermission()
+
+        if (!isMockSettingsON()) {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS))
+        }
+
+        val mapType = when (prefs.getString("mapType", "1")) {
+            "1" -> MapType.MAPTILER_BASIC_V2
+            "2" -> MapType.MAPTILER_DATAVIS
+            "3" -> MapType.MAPTILER_OSM_URL
+            "4" -> MapType.MAPTILER_DATAVIS_LIGHT
+            "5" -> MapType.MAPTILER_OUTDOOR_V2
+            else -> MapType.MAPTILER_DATAVIS_LIGHT
+        }
+
+        val cacheSizeType = when (prefs.getString("cacheSize" , "1")) {
+            "1" -> CacheSizeType.FIVE_MB
+            "2" -> CacheSizeType.TEN_MB
+            "3" -> CacheSizeType.FIFTY_MB
+            "4" -> CacheSizeType.HUNDRED_MB
+            else -> CacheSizeType.TEN_MB
+        }
+
+        val multiStopEnabled = prefs.getBoolean("multiStopEnabled", true)
+
+        mapView.setMultiTouchControls(multiStopEnabled)
+        setCacheTypeSize(cacheSizeType)
+        mapView.setTileSource(GeoForgeMapFactory.createMap(mapType))
 
         val mMyLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), mapView)
         val controller: IMapController = mapView.controller
@@ -181,9 +237,7 @@ class MainActivity : AppCompatActivity(), MapListener {
 
                     val customDistanceMetric: (GeoPoint, GeoPoint) -> Double = { p1, p2 ->
                         sqrt(
-                            (p1.latitude - p2.latitude).pow(2) + (p1.longitude - p2.longitude).pow(
-                                2
-                            )
+                            (p1.latitude - p2.latitude).pow(2) + (p1.longitude - p2.longitude).pow(2)
                         )
                     }
 
@@ -196,7 +250,8 @@ class MainActivity : AppCompatActivity(), MapListener {
                     simulator.startSimulation(
                         onSimulationFinish = {
                             showFinishedDialog()
-                        }
+                        },
+                        this@MainActivity,
                     )
 
                     val line = Polyline(mapView, true, false)
@@ -228,12 +283,103 @@ class MainActivity : AppCompatActivity(), MapListener {
         mapView.overlays.add(tapOverlay)
     }
 
-    private fun setCacheTypeSize(cacheTypeSize: CacheTypeSize) {
+    private fun checkLocationPermission() {
+        val permissions = mutableListOf<String>()
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+
+        if (permissions.isNotEmpty()) {
+            requestLocationPermissionLauncher.launch(permissions.toTypedArray())
+        } else {
+            // Both fine and coarse location permissions already granted
+            //checkMockLocationPermission()
+            initializeStartingPoint()
+        }
+    }
+
+    private fun alertUser() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Location Permission Required")
+        builder.setMessage("This app requires access to your device's location to provide relevant functionality.")
+        builder.setPositiveButton("OK") { dialog, _ ->
+            dialog.dismiss()
+        }
+        builder.setOnDismissListener {
+        }
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+    private fun initializeStartingPoint() {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            alertUser()
+            return
+        }
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location: Location ->
+                startPoint = GeoPoint(location.latitude, location.longitude)
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Failed to get location. defaulting to Addis Ababa instead", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun isMockSettingsON(): Boolean {
+        var isMockLocation = false
+        isMockLocation = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val opsManager = this.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                opsManager.checkOp(
+                    AppOpsManager.OPSTR_MOCK_LOCATION,
+                    android.os.Process.myUid(),
+                    BuildConfig.APPLICATION_ID
+                ) == AppOpsManager.MODE_ALLOWED
+            } else {
+                // in marshmallow this will always return true
+                Settings.Secure.getString(this.contentResolver, "mock_location") != "0"
+            }
+        } catch (e: Exception) {
+            return isMockLocation
+        }
+        return isMockLocation
+
+    }
+
+    private fun checkMockLocationPermission() {
+        initializeStartingPoint()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            // If SDK version is Marshmallow or above and mock location permission not granted
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+            startActivity(intent)
+            Toast.makeText(this, "Please grant mock location permission", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun setCacheTypeSize(cacheTypeSize: CacheSizeType) {
         val cacheSizeBytes: Long = when (cacheTypeSize) {
-            CacheTypeSize.TEN_MB -> 1024L * 1024L * 10L
-            CacheTypeSize.HUNDRED_MB -> 1024L * 1024L * 100L
-            CacheTypeSize.FIVE_MB -> 1024L * 1024L * 5L
-            CacheTypeSize.FIFTY_MB -> 1024L * 1024
+            CacheSizeType.TEN_MB -> 1024L * 1024L * 10L
+            CacheSizeType.HUNDRED_MB -> 1024L * 1024L * 100L
+            CacheSizeType.FIVE_MB -> 1024L * 1024L * 5L
+            CacheSizeType.FIFTY_MB -> 1024L * 1024
         }
 
         Configuration.getInstance().tileFileSystemCacheTrimBytes = cacheSizeBytes
@@ -274,4 +420,17 @@ class MainActivity : AppCompatActivity(), MapListener {
         alertDialog.show()
     }
 
+    override fun onStart() {
+        super.onStart()
+        onStartOrResume()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        onStartOrResume()
+    }
+
+    private fun onStartOrResume() {
+
+    }
 }

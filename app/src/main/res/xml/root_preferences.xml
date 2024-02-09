@@ -1,26 +1,37 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
         app:iconSpaceReserved="false"
         app:title="@string/location_and_map">
 
         <ListPreference
-            app:defaultValue="0"
             app:entries="@array/map_entries"
             app:entryValues="@array/map_values"
             app:iconSpaceReserved="false"
             app:key="mapType"
+            android:defaultValue="2"
             app:title="@string/map_type"
             app:useSimpleSummaryProvider="true" />
 
         <ListPreference
-            app:defaultValue="0"
             app:entries="@array/cache_size"
             app:entryValues="@array/cache_size_values"
             app:iconSpaceReserved="false"
+            android:defaultValue="1"
             app:key="cacheSize"
             app:title="@string/cache_size"
             app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:defaultValue="true"
+            android:key="multiStopEnabled"
+            android:title="@string/map_multi_stop_touch"
+            android:summary="@string/multi_stop_touch_summary"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false"/>
 
     </PreferenceCategory>
 

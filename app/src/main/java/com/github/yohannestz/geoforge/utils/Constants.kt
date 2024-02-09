@@ -17,4 +17,5 @@ object Constants {
     const val MAPTILER_OUTDOOR_V2 = "https://api.maptiler.com/maps/outdoor-v2/"
 
     const val MAPTILER_API_KEY = BuildConfig.MAP_TILES_KEY
+    const val IS_MOCK_LOCATIONS_ALLOWED = "is_mock_allowed"
 }

@@ -17,10 +17,10 @@
     </string-array>
 
     <string-array name="cache_size">
-        <item>5mb</item>
-        <item>10mb</item>
-        <item>50mb</item>
-        <item>100mb</item>
+        <item>5 Mb</item>
+        <item>10 Mb</item>
+        <item>50 Mb</item>
+        <item>100 Mb</item>
     </string-array>
 
     <string-array name="cache_size_values">

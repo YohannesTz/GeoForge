@@ -12,7 +12,7 @@
         android:layout_height="48dp"
         android:layout_marginHorizontal="8dp"
         android:layout_marginVertical="4dp"
-        android:src="@mipmap/ic_launcher" />
+        android:src="@drawable/ic_location_stop" />
 
     <LinearLayout
         android:layout_width="match_parent"

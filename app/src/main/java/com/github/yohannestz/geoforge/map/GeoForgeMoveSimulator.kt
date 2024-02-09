@@ -1,8 +1,11 @@
 package com.github.yohannestz.geoforge.map
 
+import android.content.Context
 import android.graphics.drawable.Drawable
+import android.location.LocationManager
 import android.os.Handler
 import android.os.Looper
+import com.github.yohannestz.geoforge.location.MockLocationProvider
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -19,8 +22,10 @@ class GeoForgeMoveSimulator(
     private val currentPositionMarker: Marker = Marker(mapView)
     private var currentPositionIndex = 0
     private var timer: Timer? = null
+    private lateinit var mockNetwork: MockLocationProvider
+    private lateinit var mockGPS: MockLocationProvider
 
-    fun startSimulation(onSimulationFinish: () -> Unit) {
+    fun startSimulation(onSimulationFinish: () -> Unit, context: Context) {
         currentPositionMarker.icon = markerIcon
         mapView.overlays.add(currentPositionMarker)
         isRunning = true
@@ -32,6 +37,26 @@ class GeoForgeMoveSimulator(
         timer?.scheduleAtFixedRate(timerTask {
             handler.post {
                 currentPositionMarker.position = routeGeoPoints[currentPositionIndex]
+                mapView.controller.setCenter(routeGeoPoints[currentPositionIndex])
+                mapView.controller.animateTo(routeGeoPoints[currentPositionIndex])
+
+                if (!this@GeoForgeMoveSimulator::mockNetwork.isInitialized) {
+                    mockNetwork = MockLocationProvider(LocationManager.NETWORK_PROVIDER, context)
+                } else if (!this@GeoForgeMoveSimulator::mockGPS.isInitialized) {
+                    mockGPS = MockLocationProvider(LocationManager.GPS_PROVIDER, context)
+                }
+
+                if (!this@GeoForgeMoveSimulator::mockNetwork.isInitialized) {
+                    mockNetwork.pushLocation(
+                        routeGeoPoints[currentPositionIndex].latitude,
+                        routeGeoPoints[currentPositionIndex].longitude
+                    )
+                } else if (!this@GeoForgeMoveSimulator::mockGPS.isInitialized) {
+                    mockGPS.pushLocation(
+                        routeGeoPoints[currentPositionIndex].latitude,
+                        routeGeoPoints[currentPositionIndex].longitude
+                    )
+                }
                 mapView.invalidate()
                 currentPositionIndex++
 
@@ -39,6 +64,12 @@ class GeoForgeMoveSimulator(
                     stopSimulation()
                     onSimulationFinish()
                     isRunning = false
+
+                    if (!this@GeoForgeMoveSimulator::mockNetwork.isInitialized) {
+                        mockNetwork.shutdown()
+                    } else if (!this@GeoForgeMoveSimulator::mockGPS.isInitialized) {
+                        mockGPS.shutdown()
+                    }
                 }
             }
         }, 0, timeIntervalMs.toLong())
@@ -63,7 +94,8 @@ class GeoForgeMoveSimulator(
     }
 
     private fun calculateTimeInterval(distance: Double, speedKmPerHour: Double): Double {
-        val speedMetersPerSecond = speedKmPerHour * 10_000 /* was 1000 but I needed the speed... don't copy from GPT */ / 3600
+        val speedMetersPerSecond =
+            speedKmPerHour * 10_000 /* was 1000 but I needed the speed... don't copy from GPT */ / 3600
         val timeInSeconds = distance / speedMetersPerSecond
         return timeInSeconds * 1000 // Convert to milliseconds
     }
