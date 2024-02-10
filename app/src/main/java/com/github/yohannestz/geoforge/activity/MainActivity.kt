@@ -38,6 +38,7 @@ import com.github.yohannestz.geoforge.adapters.GeoPointsAdapter
 import com.github.yohannestz.geoforge.map.CacheSizeType
 import com.github.yohannestz.geoforge.map.GeoForgeMapFactory
 import com.github.yohannestz.geoforge.map.GeoForgeMoveSimulator
+import com.github.yohannestz.geoforge.map.GeoForgeMoveSimulatorService
 import com.github.yohannestz.geoforge.map.GeoForgeRoutePartitioner
 import com.github.yohannestz.geoforge.map.MapType
 import com.github.yohannestz.geoforge.map.TravelMode
@@ -86,10 +87,8 @@ class MainActivity : AppCompatActivity(), MapListener {
             if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
             ) {
-                // Both fine and coarse location permissions granted
                 checkMockLocationPermission()
             } else {
-                // Permission denied
                 Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show()
             }
         }
@@ -133,7 +132,7 @@ class MainActivity : AppCompatActivity(), MapListener {
             else -> MapType.MAPTILER_DATAVIS_LIGHT
         }
 
-        val cacheSizeType = when (prefs.getString("cacheSize" , "1")) {
+        val cacheSizeType = when (prefs.getString("cacheSize", "1")) {
             "1" -> CacheSizeType.FIVE_MB
             "2" -> CacheSizeType.TEN_MB
             "3" -> CacheSizeType.FIFTY_MB
@@ -178,11 +177,21 @@ class MainActivity : AppCompatActivity(), MapListener {
 
             override fun longPressHelper(longPressLocation: GeoPoint): Boolean {
                 if (BuildConfig.DEBUG) {
-                    Log.e("longPress: ", "new Location")
+                    Log.e("longPress: ", "new Location detected thru long press")
                 }
                 if (viewModel.geoPoints.size < 4) {
                     val newGeoPoint =
                         GeoPoint(longPressLocation.latitude, longPressLocation.longitude)
+
+                    val newGeoPointMarker = Marker(mapView)
+                    newGeoPointMarker.position = newGeoPoint
+                    newGeoPointMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    newGeoPointMarker.icon = ContextCompat.getDrawable(
+                        applicationContext,
+                        R.drawable.ic_location_baseline_blue
+                    )
+                    mapView.overlays.add(newGeoPointMarker)
+
                     viewModel.geoPoints.add(newGeoPoint)
                     startButton.isEnabled = true
                     geoPointsAdapter.notifyItemInserted(viewModel.geoPoints.size - 1)
@@ -215,7 +224,7 @@ class MainActivity : AppCompatActivity(), MapListener {
                     startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     startMarker.icon = ContextCompat.getDrawable(
                         applicationContext,
-                        R.drawable.ic_location_baseline_blue
+                        R.drawable.ic_location_baseline_green
                     )
                     startMarker.title = "Start point"
                     mapView.overlays.add(startMarker)
@@ -247,12 +256,22 @@ class MainActivity : AppCompatActivity(), MapListener {
                         25
                     )
                     simulator = GeoForgeMoveSimulator(mapView, result, moving!!, 1025.0)
-                    simulator.startSimulation(
+                    /*simulator.startSimulation(
                         onSimulationFinish = {
                             showFinishedDialog()
+                            this.viewModelStore.clear() //reset state
+                            geoPointsLinearLayout.visibility = View.GONE
+                            geoForgeLayout.visibility = View.GONE
                         },
                         this@MainActivity,
-                    )
+                    )*/
+
+                    val intent = Intent(this, GeoForgeMoveSimulatorService::class.java).apply {
+                        putParcelableArrayListExtra(GeoForgeMoveSimulatorService.EXTRA_ROUTE_GEO_POINTS, result)
+                        putExtra(GeoForgeMoveSimulatorService.EXTRA_MARKER_ICON, R.drawable.ic_car)
+                        putExtra(GeoForgeMoveSimulatorService.EXTRA_SPEED_KM_PER_HOUR, 1025.0)
+                    }
+                    startService(intent)
 
                     val line = Polyline(mapView, true, false)
                     line.setPoints(result)
@@ -303,7 +322,6 @@ class MainActivity : AppCompatActivity(), MapListener {
         if (permissions.isNotEmpty()) {
             requestLocationPermissionLauncher.launch(permissions.toTypedArray())
         } else {
-            // Both fine and coarse location permissions already granted
             //checkMockLocationPermission()
             initializeStartingPoint()
         }
@@ -339,7 +357,11 @@ class MainActivity : AppCompatActivity(), MapListener {
                 startPoint = GeoPoint(location.latitude, location.longitude)
             }
             .addOnFailureListener {
-                Toast.makeText(this, "Failed to get location. defaulting to Addis Ababa instead", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Failed to get location. defaulting to Addis Ababa instead",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
     }
 
@@ -354,7 +376,6 @@ class MainActivity : AppCompatActivity(), MapListener {
                     BuildConfig.APPLICATION_ID
                 ) == AppOpsManager.MODE_ALLOWED
             } else {
-                // in marshmallow this will always return true
                 Settings.Secure.getString(this.contentResolver, "mock_location") != "0"
             }
         } catch (e: Exception) {
@@ -367,7 +388,6 @@ class MainActivity : AppCompatActivity(), MapListener {
     private fun checkMockLocationPermission() {
         initializeStartingPoint()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            // If SDK version is Marshmallow or above and mock location permission not granted
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
             startActivity(intent)
             Toast.makeText(this, "Please grant mock location permission", Toast.LENGTH_SHORT).show()
@@ -400,7 +420,7 @@ class MainActivity : AppCompatActivity(), MapListener {
             .setTitle("Help")
             .setMessage(helpMessage)
             .setPositiveButton("OK") { dialog, _ ->
-                dialog.dismiss() // Dismiss the dialog when "OK" is clicked
+                dialog.dismiss()
             }
             .create()
 

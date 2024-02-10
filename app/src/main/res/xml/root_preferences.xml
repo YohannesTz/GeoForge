@@ -12,6 +12,7 @@
             app:key="mapType"
             android:defaultValue="2"
             app:title="@string/map_type"
+            android:summary="@string/app_needs_to_be_restarted"
             app:useSimpleSummaryProvider="true" />
 
         <ListPreference

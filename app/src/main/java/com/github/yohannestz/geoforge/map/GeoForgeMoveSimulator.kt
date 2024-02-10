@@ -46,12 +46,12 @@ class GeoForgeMoveSimulator(
                     mockGPS = MockLocationProvider(LocationManager.GPS_PROVIDER, context)
                 }
 
-                if (!this@GeoForgeMoveSimulator::mockNetwork.isInitialized) {
+                if (this@GeoForgeMoveSimulator::mockNetwork.isInitialized) {
                     mockNetwork.pushLocation(
                         routeGeoPoints[currentPositionIndex].latitude,
                         routeGeoPoints[currentPositionIndex].longitude
                     )
-                } else if (!this@GeoForgeMoveSimulator::mockGPS.isInitialized) {
+                } else if (this@GeoForgeMoveSimulator::mockGPS.isInitialized) {
                     mockGPS.pushLocation(
                         routeGeoPoints[currentPositionIndex].latitude,
                         routeGeoPoints[currentPositionIndex].longitude
